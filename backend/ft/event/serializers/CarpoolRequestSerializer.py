@@ -10,61 +10,52 @@ class CarpoolRequestSerializer(serializers.ModelSerializer):
     """
 
     passenger = UserSerializer(read_only=True)
-    passenger_id = serializers.PrimaryKeyRelatedField(
-        source="passenger",
-        queryset=CarpoolTrip.objects.all(),
-        write_only=True,
-        required=False,
-    )
     trip = CarpoolTripSerializer(read_only=True)
-    trip_id = serializers.PrimaryKeyRelatedField(
-        source="trip",
-        queryset=CarpoolTrip.objects.all(),
-        write_only=True,
-    )
-    status_display = serializers.CharField(source="get_status_display", read_only=True)
-    is_paid = serializers.BooleanField(read_only=True)
-    total_paid = serializers.DecimalField(
-        max_digits=8,
-        decimal_places=2,
-        read_only=True,
-    )
-    expected_amount = serializers.DecimalField(
-        max_digits=8,
-        decimal_places=2,
-        read_only=True,
-    )
+
+    is_paid = serializers.SerializerMethodField()
+    total_paid = serializers.SerializerMethodField()
+    expected_amount = serializers.SerializerMethodField()
 
     class Meta:
         model = CarpoolRequest
         fields = [
             "id",
             "passenger",
-            "passenger_id",
             "trip",
-            "trip_id",
             "status",
-            "status_display",
             "seats_requested",
             "message",
             "response_message",
             "is_active",
+            "created_at",
+            "updated_at",
             "is_paid",
             "total_paid",
             "expected_amount",
-            "created_at",
-            "updated_at",
         ]
         read_only_fields = [
             "id",
-            "status",
-            "status_display",
             "created_at",
             "updated_at",
-            "is_paid",
-            "total_paid",
-            "expected_amount",
         ]
+
+    def get_is_paid(self, obj):
+        """
+        Retourne si la demande est entièrement payée.
+        """
+        return obj.is_paid
+
+    def get_total_paid(self, obj):
+        """
+        Retourne le montant total payé pour cette demande.
+        """
+        return obj.total_paid
+
+    def get_expected_amount(self, obj):
+        """
+        Retourne le montant attendu pour cette demande.
+        """
+        return obj.expected_amount
 
     def create(self, validated_data):
         # Si aucun passager n'est spécifié, on utilise l'utilisateur courant
@@ -89,10 +80,49 @@ class CarpoolRequestSerializer(serializers.ModelSerializer):
                 }
             )
 
+        # On vérifie qu'il n'y a pas déjà une demande pour ce passager et ce trajet
+        existing_request = CarpoolRequest.objects.filter(
+            passenger=validated_data["passenger"],
+            trip=validated_data["trip"],
+            status__in=["PENDING", "ACCEPTED"],
+            is_active=True,
+        ).exists()
+
+        if existing_request:
+            if existing_request.status == "PENDING":
+                raise serializers.ValidationError(
+                    {"trip": "Vous avez déjà une demande en attente pour ce trajet."}
+                )
+            elif existing_request.status == "ACCEPTED":
+                raise serializers.ValidationError(
+                    {"trip": "Vous avez déjà une réservation acceptée pour ce trajet."}
+                )
+
         # Par défaut, le statut est "PENDING"
         validated_data["status"] = "PENDING"
 
         return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        # Vérifier si le status est mis à jour
+        if "status" in validated_data:
+            new_status = validated_data["status"]
+
+            # Vérifier que le nouveau status est valide
+            if new_status not in dict(CarpoolRequest.STATUS_CHOICES):
+                raise serializers.ValidationError(
+                    {"status": f"Le statut '{new_status}' n'est pas valide."}
+                )
+
+            # Si on passe de PENDING à ACCEPTED, vérifier les places disponibles
+            if instance.status == "PENDING" and new_status == "ACCEPTED":
+                trip = instance.trip
+                if trip.seats_available < instance.seats_requested:
+                    raise serializers.ValidationError(
+                        {"status": f"{trip.seats_available} places restantes."}
+                    )
+
+        return super().update(instance, validated_data)
 
 
 class CarpoolRequestActionSerializer(serializers.Serializer):
@@ -140,13 +170,11 @@ class CarpoolRequestActionSerializer(serializers.Serializer):
                     )
 
         elif data["action"] == "cancel":
-            # Seul le passager peut annuler sa demande
             if user != carpool_request.passenger:
                 raise serializers.ValidationError(
                     {"action": "Seul le passager peut annuler sa demande."}
                 )
 
-            # On ne peut pas annuler une demande déjà annulée ou refusée
             if carpool_request.status in ["CANCELLED", "REJECTED"]:
                 raise serializers.ValidationError(
                     {

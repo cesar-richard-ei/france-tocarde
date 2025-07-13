@@ -13,12 +13,14 @@ class EventHostingRequestSerializer(serializers.ModelSerializer):
     # En écriture : simplement l'ID
     requester = UserSerializer(read_only=True)
     hosting = EventHostingSerializer(read_only=True)
+    hosting_id = serializers.IntegerField(write_only=True, source="hosting.id")
 
     class Meta:
         model = EventHostingRequest
         fields = [
             "id",
             "hosting",
+            "hosting_id",
             "requester",
             "status",
             "message",
@@ -37,16 +39,31 @@ class EventHostingRequestSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """
-        Vérifie que l'utilisateur ne fait pas une demande pour son propre hébergement
-        et qu'il n'a pas déjà fait une demande pour le même événement.
+        Vérifie que l'utilisateur ne fait pas une demande pour son propre
+        hébergement et qu'il n'a pas déjà une demande pour le même événement.
         """
-        hosting = data.get("hosting")
+        hosting_id = data.get("hosting", {}).get("id")
+
+        # Si nous n'avons pas l'ID d'hébergement, c'est une erreur
+        if not hosting_id:
+            raise serializers.ValidationError(
+                {"hosting_id": "L'ID d'hébergement est requis."}
+            )
+
+        # Récupérer l'objet hébergement à partir de l'ID
+        try:
+            hosting = EventHosting.objects.get(id=hosting_id)
+        except EventHosting.DoesNotExist:
+            raise serializers.ValidationError(
+                {"hosting_id": "Cet hébergement n'existe pas."}
+            )
+
         requester = self.context["request"].user
 
         # Vérification que l'utilisateur n'est pas l'hôte
         if hosting.host == requester:
             raise serializers.ValidationError(
-                {"hosting": "Vous ne pouvez pas demander votre propre hébergement."}
+                {"hosting_id": "Vous ne pouvez pas demander votre propre hébergement."}
             )
 
         # Vérification que l'utilisateur n'a pas déjà une demande active
@@ -64,9 +81,13 @@ class EventHostingRequestSerializer(serializers.ModelSerializer):
 
         if existing_requests.exists():
             raise serializers.ValidationError(
-                {"hosting": "Vous avez déjà une demande en cours pour cet événement."}
+                {
+                    "hosting_id": "Vous avez déjà une demande en cours pour cet événement."
+                }
             )
 
+        # Remplacer l'id par l'instance complète pour le reste du traitement
+        data["hosting"] = hosting
         return data
 
 

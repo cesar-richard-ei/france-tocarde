@@ -2,7 +2,7 @@ from rest_framework import viewsets, permissions, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-from ft.event.models import CarpoolRequest
+from ft.event.models import CarpoolRequest, CarpoolPayment
 from ft.event.serializers import (
     CarpoolRequestSerializer,
     CarpoolRequestActionSerializer,
@@ -19,7 +19,7 @@ class CarpoolRequestViewSet(viewsets.ModelViewSet):
     serializer_class = CarpoolRequestSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_fields = ["trip", "passenger", "status", "is_active", "is_paid"]
+    filterset_fields = ["trip", "passenger", "status", "is_active"]
     search_fields = ["message"]
 
     def get_queryset(self):
@@ -84,25 +84,50 @@ class CarpoolRequestViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def payment(self, request, pk=None):
         """
-        Endpoint pour marquer une demande comme payée ou non.
-        Seul le conducteur peut marquer un paiement comme effectué ou non.
+        Endpoint pour créer ou mettre à jour un paiement pour une demande de covoiturage.
+        Seul le conducteur peut enregistrer des paiements.
         """
         carpool_request = self.get_object()
-        serializer = CarpoolPaymentSerializer(
-            data=request.data,
-            context={"request": request, "carpool_request": carpool_request},
-        )
+
+        # Vérifier que l'utilisateur est bien le conducteur
+        if request.user != carpool_request.trip.driver:
+            return Response(
+                {"detail": "Seul le conducteur peut enregistrer des paiements."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Vérifier que la demande est acceptée
+        if carpool_request.status != "ACCEPTED":
+            return Response(
+                {
+                    "detail": "Seules les demandes acceptées peuvent avoir des paiements."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        data = request.data.copy()
+        data["request_id"] = carpool_request.id
+
+        # On vérifie si un paiement complet existe déjà
+        existing_payment = CarpoolPayment.objects.filter(
+            request=carpool_request, is_completed=True
+        ).first()
+
+        if existing_payment:
+            # Mettre à jour le paiement existant
+            serializer = CarpoolPaymentSerializer(
+                existing_payment, data=data, partial=True, context={"request": request}
+            )
+        else:
+            # Créer un nouveau paiement
+            serializer = CarpoolPaymentSerializer(
+                data=data, context={"request": request}
+            )
 
         if serializer.is_valid():
-            is_paid = serializer.validated_data["is_paid"]
-            payment_notes = serializer.validated_data.get("payment_notes", "")
+            payment = serializer.save()
 
-            # Mettre à jour le statut de paiement
-            carpool_request.is_paid = is_paid
-            carpool_request.payment_notes = payment_notes
-            carpool_request.save()
-
-            # Retourner la demande mise à jour
+            # Retourner la demande mise à jour avec les informations de paiement
             return Response(
                 CarpoolRequestSerializer(carpool_request).data,
                 status=status.HTTP_200_OK,

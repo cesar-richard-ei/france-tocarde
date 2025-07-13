@@ -68,7 +68,6 @@ export async function createSubscription(
 
 export async function fetchUserSubscriptions(): Promise<PaginatedEventSubscriptions> {
   try {
-    console.log("Fetching user subscriptions...");
     const resp = await fetch(`/api/event/event-subscriptions/`, {
       credentials: 'include',
     });
@@ -78,7 +77,6 @@ export async function fetchUserSubscriptions(): Promise<PaginatedEventSubscripti
     }
 
     const data = await resp.json();
-    console.log("User subscriptions data:", data);
     return PaginatedEventSubscriptionsSchema.parse(data);
   } catch (error) {
     console.error("Error fetching user subscriptions:", error);
@@ -100,7 +98,6 @@ export function useUserSubscriptions() {
 
 export function getUserSubscriptionForEvent(subscriptions: EventSubscription[], eventId: number): EventSubscription | undefined {
   const subscription = subscriptions.find(sub => sub.event === eventId);
-  console.log(`Looking for subscription to event ${eventId}:`, subscription);
   return subscription;
 }
 

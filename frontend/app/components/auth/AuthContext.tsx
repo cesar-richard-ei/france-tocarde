@@ -8,6 +8,9 @@ interface User {
   email: string;
   has_usable_password: boolean;
   [key: string]: any;
+  user: {
+    id: number;
+  };
   profile: {
     address: string;
     birth_date: string;

@@ -10,5 +10,8 @@ export const GenericPaginatedSchema = z.object({
 export type GenericPaginated<T> = z.infer<typeof GenericPaginatedSchema>;
 
 export const PaginatedSchema = <T>(schema: z.ZodType<T>) => GenericPaginatedSchema.extend({
-results: z.array(schema),
+    count: z.number(),
+    next: z.string().nullable(),
+    previous: z.string().nullable(),
+    results: z.array(schema),
 });

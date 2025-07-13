@@ -29,18 +29,14 @@ export function EventSubscriptionDialog({
   );
   const mutation = useCreateSubscription();
 
-  console.log("EventSubscriptionDialog rendered", { existingSubscription, isOpen, answer, canInvite });
-
   // Mettre à jour les valeurs quand l'inscription existante change ou quand le dialogue s'ouvre
   useEffect(() => {
     if (isOpen) {
       if (existingSubscription) {
-        console.log("Setting values from existing subscription:", existingSubscription);
         setAnswer(existingSubscription.answer);
         setCanInvite(existingSubscription.can_invite);
       } else {
         // Réinitialiser à des valeurs par défaut si pas d'inscription existante
-        console.log("Resetting to default values");
         setAnswer("YES");
         setCanInvite(false);
       }
@@ -48,7 +44,6 @@ export function EventSubscriptionDialog({
   }, [existingSubscription, isOpen]);
 
   const handleSubmit = () => {
-    console.log("Submitting with values:", { answer, canInvite });
     mutation.mutate({
       eventId: event.id,
       data: {

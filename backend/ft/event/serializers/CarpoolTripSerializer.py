@@ -44,8 +44,6 @@ class CarpoolTripSerializer(serializers.ModelSerializer):
             "seats_available",
             "is_full",
             "price_per_seat",
-            "allow_luggage",
-            "allow_pets",
             "additional_info",
             "is_active",
             "created_at",

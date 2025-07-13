@@ -1,4 +1,5 @@
 from django.contrib.auth.base_user import BaseUserManager
+from django.utils.text import slugify
 
 
 class UserManager(BaseUserManager):
@@ -8,6 +9,18 @@ class UserManager(BaseUserManager):
         if not email:
             raise ValueError("Users require an email field")
         email = self.normalize_email(email)
+
+        # Génère un username unique basé sur l'email si non fourni
+        if not extra_fields.get("username"):
+            username = slugify(email.split("@")[0])
+            # Vérifie l'unicité du username
+            username_base = username
+            i = 1
+            while self.model.objects.filter(username=username).exists():
+                username = f"{username_base}{i}"
+                i += 1
+            extra_fields["username"] = username
+
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)

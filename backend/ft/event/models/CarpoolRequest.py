@@ -73,11 +73,12 @@ class CarpoolRequest(models.Model):
         verbose_name = "Demande de covoiturage"
         verbose_name_plural = "Demandes de covoiturage"
         ordering = ["-created_at"]
-        # Empêcher un passager de faire plusieurs demandes pour le même trajet
+        # Empêcher un passager d'avoir plusieurs demandes actives pour le même trajet
         constraints = [
             models.UniqueConstraint(
-                fields=["passenger", "trip"],
-                name="unique_passenger_trip",
+                fields=["passenger", "trip", "status"],
+                condition=models.Q(status__in=["PENDING", "ACCEPTED"]),
+                name="unique_passenger_trip_active",
             )
         ]
 
