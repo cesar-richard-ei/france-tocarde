@@ -1,4 +1,3 @@
-from datetime import datetime
 from django.db import models
 
 from ft.user.models import User
@@ -65,7 +64,6 @@ class EventHostingRequest(models.Model):
         verbose_name = "Demande d'hébergement"
         verbose_name_plural = "Demandes d'hébergement"
         ordering = ["-created_at"]
-        unique_together = ["hosting", "requester"]
 
     def __str__(self):
         return f"Demande de {self.requester} pour {self.hosting}"

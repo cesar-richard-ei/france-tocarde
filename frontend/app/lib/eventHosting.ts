@@ -32,7 +32,7 @@ export type EventHostingRequestStatus = z.infer<typeof EventHostingRequestStatus
 
 export const EventHostingRequestSchema = z.object({
   id: z.number(),
-  hosting: z.number(),
+  hosting: EventHostingSchema,
   requester: z.union([z.number(), UserSchema]),
   status: EventHostingRequestStatusEnum,
   message: z.string().nullable(),
@@ -194,7 +194,12 @@ export async function fetchSentHostingRequests(): Promise<PaginatedEventHostingR
   const resp = await fetch('/api/event/event-hosting-requests/?as_requester=true');
   if (!resp.ok) throw new Error('Failed to fetch sent hosting requests');
   const data = await resp.json();
-  return PaginatedEventHostingRequestsSchema.parse(data);
+  try {
+    return PaginatedEventHostingRequestsSchema.parse(data);
+  } catch (error) {
+    console.error('Error parsing response data:', error);
+    throw error;
+  }
 }
 
 export function useSentHostingRequests(options?: { enabled?: boolean }) {
@@ -208,9 +213,15 @@ export function useSentHostingRequests(options?: { enabled?: boolean }) {
 export async function updateHostingRequestStatus(
   requestId: number,
   status: EventHostingRequestStatus,
-  hostMessage: string | null = null
+  hostMessage: string | null = null,
+  hostingId?: number
 ): Promise<EventHostingRequest> {
   const csrfToken = getCSRFToken();
+
+  const payload: any = { status, host_message: hostMessage };
+  if (hostingId !== undefined) {
+    payload.hosting_id = hostingId;
+  }
 
   const resp = await fetch(`/api/event/event-hosting-requests/${requestId}/`, {
     method: 'PATCH',
@@ -218,7 +229,7 @@ export async function updateHostingRequestStatus(
       'Content-Type': 'application/json',
       'X-CSRFToken': csrfToken || '',
     },
-    body: JSON.stringify({ status, host_message: hostMessage }),
+    body: JSON.stringify(payload),
     credentials: 'include',
   });
 
@@ -237,12 +248,14 @@ export function useUpdateHostingRequestStatus() {
     mutationFn: ({
       requestId,
       status,
-      hostMessage
+      hostMessage,
+      hosting_id
     }: {
       requestId: number,
       status: EventHostingRequestStatus,
-      hostMessage?: string | null
-    }) => updateHostingRequestStatus(requestId, status, hostMessage),
+      hostMessage?: string | null,
+      hosting_id?: number
+    }) => updateHostingRequestStatus(requestId, status, hostMessage, hosting_id),
     onSuccess: (_, variables) => {
       const actionMap: Record<EventHostingRequestStatus, string> = {
         ACCEPTED: "acceptée",
@@ -258,6 +271,42 @@ export function useUpdateHostingRequestStatus() {
     },
     onError: (error: Error) => {
       toast.error(`Erreur lors de la mise à jour de la demande: ${error.message}`);
+    }
+  });
+}
+
+export async function cancelHostingRequest(requestId: number): Promise<EventHostingRequest> {
+  const csrfToken = getCSRFToken();
+
+  const resp = await fetch(`/api/event/event-hosting-requests/${requestId}/cancel/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken || '',
+    },
+    credentials: 'include',
+  });
+
+  if (!resp.ok) {
+    const error = await resp.json().catch(() => ({ detail: 'Une erreur est survenue' }));
+    throw new Error(error.detail || "Failed to cancel hosting request");
+  }
+
+  return EventHostingRequestSchema.parse(await resp.json());
+}
+
+export function useCancelHostingRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (requestId: number) => cancelHostingRequest(requestId),
+    onSuccess: () => {
+      toast.success("Demande annulée avec succès");
+      queryClient.invalidateQueries({ queryKey: ["sent-hosting-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["event-hostings"] });
+    },
+    onError: (error: Error) => {
+      toast.error(`Erreur lors de l'annulation de la demande: ${error.message}`);
     }
   });
 }
