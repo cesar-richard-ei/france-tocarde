@@ -5,7 +5,7 @@ from .CarpoolTrip import CarpoolTrip
 
 class CarpoolRequest(models.Model):
     """
-    Une CarpoolRequest représente une demande de place dans un trajet de covoiturage.
+    A CarpoolRequest represents a request for a seat in a carpool trip.
     """
 
     STATUS_CHOICES = [
@@ -73,7 +73,6 @@ class CarpoolRequest(models.Model):
         verbose_name = "Demande de covoiturage"
         verbose_name_plural = "Demandes de covoiturage"
         ordering = ["-created_at"]
-        # Empêcher un passager d'avoir plusieurs demandes actives pour le même trajet
         constraints = [
             models.UniqueConstraint(
                 fields=["passenger", "trip", "status"],
@@ -90,7 +89,6 @@ class CarpoolRequest(models.Model):
         """
         Vérifie si la demande a été entièrement payée.
         """
-        # La demande est considérée comme payée s'il existe un paiement complet
         return self.payments.filter(is_completed=True).exists()
 
     @property
@@ -98,7 +96,6 @@ class CarpoolRequest(models.Model):
         """
         Calcule le montant total payé pour cette demande.
         """
-        # Somme de tous les paiements associés à cette demande
         return self.payments.aggregate(models.Sum("amount"))["amount__sum"] or 0
 
     @property
@@ -106,5 +103,4 @@ class CarpoolRequest(models.Model):
         """
         Calcule le montant attendu pour cette demande.
         """
-        # Prix par place * nombre de places demandées
         return self.trip.price_per_seat * self.seats_requested

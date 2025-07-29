@@ -4,6 +4,10 @@ from django.db.models import Count
 
 
 class EventSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Event model.
+    """
+
     subscriptions_count = serializers.SerializerMethodField()
     first_subscribers = serializers.SerializerMethodField()
 
@@ -32,17 +36,14 @@ class EventSerializer(serializers.ModelSerializer):
         ]
 
     def get_subscriptions_count(self, obj):
-        # Récupérer le décompte des réponses par type de réponse
         counts = (
             obj.eventsubscription_set.filter(is_active=True)
             .values("answer")
             .annotate(count=Count("answer"))
         )
 
-        # Initialiser le dictionnaire avec toutes les valeurs possibles à 0
         result = {"YES": 0, "NO": 0, "MAYBE": 0}
 
-        # Remplir avec les valeurs réelles
         for item in counts:
             result[item["answer"]] = item["count"]
 

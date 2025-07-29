@@ -7,8 +7,7 @@ from ft.event.models import Event
 
 class EventHosting(models.Model):
     """
-    Un EventHosting représente une offre d'hébergement proposée par un
-    utilisateur lors d'un événement.
+    An EventHosting represents an offer of hosting proposed by a user for an event.
     """
 
     event: Event = models.ForeignKey(
@@ -102,8 +101,6 @@ class EventHosting(models.Model):
         return f"Hébergement par {self.host} pour {self.event}"
 
     def save(self, *args, **kwargs):
-        # Si c'est une création et que les valeurs ne sont pas explicitement
-        # définies, on utilise par défaut les valeurs du profil de l'utilisateur
         if not self.pk:
             if self.available_beds is None:
                 self.available_beds = self.host.home_available_beds

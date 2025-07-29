@@ -6,7 +6,7 @@ from .CarpoolTripSerializer import CarpoolTripSerializer
 
 class CarpoolRequestSerializer(serializers.ModelSerializer):
     """
-    Sérialiseur pour le modèle CarpoolRequest.
+    Serializer for the CarpoolRequest model.
     """
 
     passenger = UserSerializer(read_only=True)
@@ -58,11 +58,9 @@ class CarpoolRequestSerializer(serializers.ModelSerializer):
         return obj.expected_amount
 
     def create(self, validated_data):
-        # Si aucun passager n'est spécifié, on utilise l'utilisateur courant
         if "passenger" not in validated_data:
             validated_data["passenger"] = self.context["request"].user
 
-        # On vérifie que le conducteur n'essaie pas de faire une demande sur son propre trajet
         if validated_data["passenger"] == validated_data["trip"].driver:
             raise serializers.ValidationError(
                 {
@@ -70,7 +68,6 @@ class CarpoolRequestSerializer(serializers.ModelSerializer):
                 }
             )
 
-        # On vérifie qu'il reste assez de places
         trip = validated_data["trip"]
         seats_requested = validated_data.get("seats_requested", 1)
         if trip.seats_available < seats_requested:
@@ -80,7 +77,6 @@ class CarpoolRequestSerializer(serializers.ModelSerializer):
                 }
             )
 
-        # On vérifie qu'il n'y a pas déjà une demande pour ce passager et ce trajet
         existing_request = CarpoolRequest.objects.filter(
             passenger=validated_data["passenger"],
             trip=validated_data["trip"],
@@ -98,23 +94,19 @@ class CarpoolRequestSerializer(serializers.ModelSerializer):
                     {"trip": "Vous avez déjà une réservation acceptée pour ce trajet."}
                 )
 
-        # Par défaut, le statut est "PENDING"
         validated_data["status"] = "PENDING"
 
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
-        # Vérifier si le status est mis à jour
         if "status" in validated_data:
             new_status = validated_data["status"]
 
-            # Vérifier que le nouveau status est valide
             if new_status not in dict(CarpoolRequest.STATUS_CHOICES):
                 raise serializers.ValidationError(
                     {"status": f"Le statut '{new_status}' n'est pas valide."}
                 )
 
-            # Si on passe de PENDING à ACCEPTED, vérifier les places disponibles
             if instance.status == "PENDING" and new_status == "ACCEPTED":
                 trip = instance.trip
                 if trip.seats_available < instance.seats_requested:
@@ -141,9 +133,7 @@ class CarpoolRequestActionSerializer(serializers.Serializer):
         carpool_request = self.context.get("carpool_request")
         user = request.user
 
-        # Vérifier qui peut faire quelle action
         if data["action"] == "accept" or data["action"] == "reject":
-            # Seul le conducteur peut accepter ou refuser
             if user != carpool_request.trip.driver:
                 raise serializers.ValidationError(
                     {
@@ -151,7 +141,6 @@ class CarpoolRequestActionSerializer(serializers.Serializer):
                     }
                 )
 
-            # On ne peut pas accepter ou refuser une demande déjà traitée
             if carpool_request.status != "PENDING":
                 raise serializers.ValidationError(
                     {
@@ -159,7 +148,6 @@ class CarpoolRequestActionSerializer(serializers.Serializer):
                     }
                 )
 
-            # Pour une acceptation, vérifier qu'il reste des places
             if data["action"] == "accept":
                 trip = carpool_request.trip
                 if trip.seats_available < carpool_request.seats_requested:

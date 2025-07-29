@@ -48,7 +48,6 @@ class CarpoolPaymentSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         carpool_request = data.get("request")
 
-        # Vérifier si la demande est acceptée
         if carpool_request and carpool_request.status != "ACCEPTED":
             raise serializers.ValidationError(
                 {
@@ -56,7 +55,6 @@ class CarpoolPaymentSerializer(serializers.ModelSerializer):
                 }
             )
 
-        # Vérifier que l'utilisateur est bien le conducteur du trajet
         if carpool_request and request.user != carpool_request.trip.driver:
             raise serializers.ValidationError(
                 {"request": "Seul le conducteur peut enregistrer des paiements."}

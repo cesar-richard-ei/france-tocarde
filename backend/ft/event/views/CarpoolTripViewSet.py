@@ -7,7 +7,7 @@ from ft.event.serializers import CarpoolTripSerializer
 
 class CarpoolTripViewSet(viewsets.ModelViewSet):
     """
-    API endpoint pour les trajets de covoiturage.
+    API endpoint for the carpool trips.
     """
 
     queryset = CarpoolTrip.objects.all().order_by("-departure_datetime")
@@ -30,27 +30,22 @@ class CarpoolTripViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Filtre pour obtenir les trajets selon les paramètres de la requête.
+        Filter to get the trips according to the request parameters.
         """
         queryset = super().get_queryset()
 
-        # Filtrer par disponibilité de places
         has_seats = self.request.query_params.get("has_seats")
         if has_seats is not None:
-            # On compte les places acceptées par trajet
             queryset = queryset.annotate(
                 accepted_seats=Count("requests", filter=Q(requests__status="ACCEPTED"))
             )
-            # On filtre les trajets avec au moins une place disponible
             if has_seats.lower() == "true":
                 queryset = queryset.filter(seats_total__gt=F("accepted_seats"))
 
-        # Filtrer par date de départ après une certaine date
         departure_after = self.request.query_params.get("departure_after")
         if departure_after:
             queryset = queryset.filter(departure_datetime__gte=departure_after)
 
-        # Filtrer par date de départ avant une certaine date
         departure_before = self.request.query_params.get("departure_before")
         if departure_before:
             queryset = queryset.filter(departure_datetime__lte=departure_before)
@@ -59,6 +54,6 @@ class CarpoolTripViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """
-        Définit l'utilisateur courant comme conducteur lors de la création.
+        Set the current user as driver when creating.
         """
         serializer.save(driver=self.request.user)

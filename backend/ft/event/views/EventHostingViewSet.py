@@ -9,7 +9,7 @@ from ft.event.permissions import IsHostingOwnerOrReadOnly
 
 class EventHostingViewSet(viewsets.ModelViewSet):
     """
-    API endpoint qui permet de consulter ou modifier les hébergements.
+    API endpoint to view or modify the hostings.
     """
 
     serializer_class = EventHostingSerializer
@@ -21,22 +21,19 @@ class EventHostingViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Cette vue retourne une liste d'hébergements.
-        Filtrer par event ou host est possible en passant le paramètre dans l'URL.
+        This view returns a list of hostings.
+        Filtering by event or host is possible by passing the parameter in the URL.
         """
         queryset = EventHosting.objects.all()
 
-        # Filtrage par événement
         event_id = self.request.query_params.get("event", None)
         if event_id:
             queryset = queryset.filter(event=event_id)
 
-        # Filtrage par hôte
         host_id = self.request.query_params.get("host", None)
         if host_id:
             queryset = queryset.filter(host=host_id)
 
-        # Filtrage par état actif/inactif
         is_active = self.request.query_params.get("is_active", None)
         if is_active is not None:
             is_active = is_active.lower() == "true"
@@ -46,14 +43,14 @@ class EventHostingViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """
-        Associe l'utilisateur courant comme hôte lors de la création.
+        Associate the current user as host when creating.
         """
         serializer.save(host=self.request.user)
 
     @action(detail=False, methods=["get"])
     def me(self, request):
         """
-        Retourne uniquement les hébergements proposés par l'utilisateur connecté.
+        Return only the hostings proposed by the connected user.
         """
         hostings = EventHosting.objects.filter(host=request.user)
         serializer = self.get_serializer(hostings, many=True)
@@ -62,7 +59,7 @@ class EventHostingViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def for_event(self, request):
         """
-        Retourne uniquement les hébergements proposés pour un événement spécifique.
+        Return only the hostings proposed for a specific event.
         """
         event_id = request.query_params.get("event_id", None)
         if not event_id:
@@ -79,16 +76,14 @@ class EventHostingViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["get"])
     def available_places(self, request, pk=None):
         """
-        Retourne le nombre de places disponibles dans cet hébergement.
+        Return the number of places available in this hosting.
         """
         hosting = self.get_object()
 
-        # Compter le nombre de demandes acceptées
         accepted_requests_count = EventHostingRequest.objects.filter(
             hosting=hosting, status="ACCEPTED"
         ).count()
 
-        # Calculer le nombre de places restantes
         available_places = hosting.available_beds - accepted_requests_count
 
         return Response(

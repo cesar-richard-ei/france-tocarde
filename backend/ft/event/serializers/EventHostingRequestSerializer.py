@@ -6,7 +6,7 @@ from ft.event.serializers import EventHostingSerializer
 
 class EventHostingRequestSerializer(serializers.ModelSerializer):
     """
-    Serializer pour le modèle EventHostingRequest
+    Serializer for the EventHostingRequest model.
     """
 
     requester = UserSerializer(read_only=True)
@@ -42,13 +42,11 @@ class EventHostingRequestSerializer(serializers.ModelSerializer):
         """
         hosting_id = data.get("hosting", {}).get("id")
 
-        # Si nous n'avons pas l'ID d'hébergement, c'est une erreur
         if not hosting_id:
             raise serializers.ValidationError(
                 {"hosting_id": "L'ID d'hébergement est requis."}
             )
 
-        # Récupérer l'objet hébergement à partir de l'ID
         try:
             hosting = EventHosting.objects.get(id=hosting_id)
         except EventHosting.DoesNotExist:
@@ -58,14 +56,11 @@ class EventHostingRequestSerializer(serializers.ModelSerializer):
 
         requester = self.context["request"].user
 
-        # Vérification que l'utilisateur n'est pas l'hôte
         if hosting.host == requester:
             raise serializers.ValidationError(
                 {"hosting_id": "Vous ne pouvez pas demander votre propre hébergement."}
             )
 
-        # Vérification que l'utilisateur n'a pas déjà une demande active
-        # pour le même événement
         event = hosting.event
         existing_requests = EventHostingRequest.objects.filter(
             hosting__event=event,
@@ -73,7 +68,6 @@ class EventHostingRequestSerializer(serializers.ModelSerializer):
             status="ACCEPTED",
         )
 
-        # Exclure la demande actuelle en cas de mise à jour
         if self.instance:
             existing_requests = existing_requests.exclude(pk=self.instance.pk)
 
@@ -84,14 +78,11 @@ class EventHostingRequestSerializer(serializers.ModelSerializer):
                 }
             )
 
-        # Vérification que l'utilisateur n'a pas déjà une demande en attente
-        # pour le même hébergement (peu importe le statut)
         existing_hosting_requests = EventHostingRequest.objects.filter(
             hosting=hosting,
             requester=requester,
         ).exclude(status__in=["CANCELLED", "REJECTED"])
 
-        # Exclure la demande actuelle en cas de mise à jour
         if self.instance:
             existing_hosting_requests = existing_hosting_requests.exclude(
                 pk=self.instance.pk
@@ -105,14 +96,13 @@ class EventHostingRequestSerializer(serializers.ModelSerializer):
                 }
             )
 
-        # Remplacer l'id par l'instance complète pour le reste du traitement
         data["hosting"] = hosting
         return data
 
 
 class EventHostingRequestActionSerializer(serializers.Serializer):
     """
-    Serializer pour les actions sur les demandes d'hébergement
+    Serializer for the actions on the hosting requests.
     """
 
     host_message = serializers.CharField(required=False, allow_blank=True)

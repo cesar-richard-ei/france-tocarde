@@ -13,7 +13,7 @@ from ft.event.permissions import IsHostingRequestRequesterOrHost
 
 class EventHostingRequestViewSet(viewsets.ModelViewSet):
     """
-    API endpoint qui permet de gérer les demandes d'hébergement.
+    API endpoint to manage the hosting requests.
     """
 
     serializer_class = EventHostingRequestSerializer
@@ -25,35 +25,28 @@ class EventHostingRequestViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Cette vue retourne une liste de demandes d'hébergement.
-        - Un utilisateur voit ses propres demandes
-        - Un hôte voit les demandes pour ses hébergements
+        This view returns a list of hosting requests.
+        - A user sees their own requests
+        - A host sees the requests for their hostings
         """
         user = self.request.user
         queryset = EventHostingRequest.objects.all()
 
-        # Si l'utilisateur n'est pas staff, on filtre selon ses droits
         if not user.is_staff:
-            # Les demandes dont l'utilisateur est le demandeur
             user_requests = queryset.filter(requester=user)
 
-            # Les demandes pour les hébergements dont l'utilisateur est l'hôte
             host_requests = queryset.filter(hosting__host=user)
 
-            # Union des deux querysets
             queryset = user_requests | host_requests
 
-        # Filtrage par statut
         status = self.request.query_params.get("status", None)
         if status:
             queryset = queryset.filter(status=status)
 
-        # Filtrage par hébergement
         hosting_id = self.request.query_params.get("hosting", None)
         if hosting_id:
             queryset = queryset.filter(hosting=hosting_id)
 
-        # Filtrage par demandeur
         requester_id = self.request.query_params.get("requester", None)
         if requester_id:
             queryset = queryset.filter(requester=requester_id)
@@ -62,45 +55,40 @@ class EventHostingRequestViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """
-        Associe l'utilisateur courant comme demandeur lors de la création.
+        Associate the current user as requester when creating.
         """
         serializer.save(requester=self.request.user)
 
     def get_places_available(self, hosting):
         """
-        Calcule le nombre de places encore disponibles pour un hébergement.
+        Calculate the number of places still available for a hosting.
         """
-        # Compter le nombre de demandes acceptées
         accepted_requests_count = EventHostingRequest.objects.filter(
             hosting=hosting, status=EventHostingRequest.Status.ACCEPTED
         ).count()
 
-        # Calculer le nombre de places restantes
         return hosting.available_beds - accepted_requests_count
 
     @action(detail=True, methods=["post"])
     def accept(self, request, pk=None):
         """
-        Action pour accepter une demande d'hébergement.
-        Seul l'hôte peut accepter une demande.
+        Action to accept a hosting request.
+        Only the host can accept a request.
         """
         hosting_request = self.get_object()
 
-        # Vérifier que l'utilisateur est bien l'hôte de l'hébergement
         if hosting_request.hosting.host != request.user:
             return Response(
                 {"error": "Vous n'êtes pas autorisé à accepter cette demande."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # Vérifier que la demande est en attente
         if hosting_request.status != EventHostingRequest.Status.PENDING:
             return Response(
                 {"error": "Cette demande ne peut plus être acceptée."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Vérifier qu'il reste des places disponibles
         places_available = self.get_places_available(hosting_request.hosting)
         if places_available <= 0:
             return Response(
@@ -108,7 +96,6 @@ class EventHostingRequestViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Traiter le message de l'hôte s'il y en a un
         serializer = EventHostingRequestActionSerializer(data=request.data)
         if serializer.is_valid():
             if "host_message" in serializer.validated_data:
@@ -123,26 +110,23 @@ class EventHostingRequestViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def reject(self, request, pk=None):
         """
-        Action pour refuser une demande d'hébergement.
-        Seul l'hôte peut refuser une demande.
+        Action to reject a hosting request.
+        Only the host can reject a request.
         """
         hosting_request = self.get_object()
 
-        # Vérifier que l'utilisateur est bien l'hôte de l'hébergement
         if hosting_request.hosting.host != request.user:
             return Response(
                 {"error": "Vous n'êtes pas autorisé à refuser cette demande."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # Vérifier que la demande est en attente
         if hosting_request.status != EventHostingRequest.Status.PENDING:
             return Response(
                 {"error": "Cette demande ne peut plus être refusée."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Traiter le message de l'hôte s'il y en a un
         serializer = EventHostingRequestActionSerializer(data=request.data)
         if serializer.is_valid():
             if "host_message" in serializer.validated_data:
@@ -157,19 +141,17 @@ class EventHostingRequestViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def cancel(self, request, pk=None):
         """
-        Action pour annuler une demande d'hébergement.
-        Seul le demandeur peut annuler sa demande.
+        Action to cancel a hosting request.
+        Only the requester can cancel their request.
         """
         hosting_request = self.get_object()
 
-        # Vérifier que l'utilisateur est bien le demandeur
         if hosting_request.requester != request.user:
             return Response(
                 {"error": "Vous n'êtes pas autorisé à annuler cette demande."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # Vérifier que la demande peut être annulée
         if hosting_request.status not in [
             EventHostingRequest.Status.PENDING,
             EventHostingRequest.Status.ACCEPTED,
@@ -186,7 +168,7 @@ class EventHostingRequestViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def my_requests(self, request):
         """
-        Retourne uniquement les demandes faites par l'utilisateur connecté.
+        Return only the requests made by the connected user.
         """
         requests = EventHostingRequest.objects.filter(requester=request.user)
         serializer = self.get_serializer(requests, many=True)
@@ -195,7 +177,7 @@ class EventHostingRequestViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def for_my_hostings(self, request):
         """
-        Retourne uniquement les demandes pour les hébergements de l'utilisateur connecté.
+        Return only the requests for the hostings of the connected user.
         """
         requests = EventHostingRequest.objects.filter(hosting__host=request.user)
         serializer = self.get_serializer(requests, many=True)

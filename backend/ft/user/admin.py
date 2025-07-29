@@ -7,6 +7,10 @@ from django.core.exceptions import ValidationError
 
 @admin.register(User)
 class UserAdmin(UserAdmin):
+    """
+    Admin for the User model.
+    """
+
     list_display = (
         "email",
         "first_name",
@@ -111,6 +115,10 @@ class UserAdmin(UserAdmin):
 
 @admin.register(Membership)
 class MembershipAdmin(admin.ModelAdmin):
+    """
+    Admin for the Membership model.
+    """
+
     list_display = (
         "user",
         "start_date",
@@ -125,7 +133,9 @@ class MembershipAdmin(admin.ModelAdmin):
     ordering = ("start_date", "end_date", "user")
 
     def save_model(self, request, obj, form, change):
-        # Validation: une seule adhésion active par période
+        """
+        Validate that there is only one active membership per period.
+        """
         if obj.is_active:
             overlapping = Membership.objects.filter(
                 user=obj.user,
@@ -134,7 +144,6 @@ class MembershipAdmin(admin.ModelAdmin):
                 end_date__gte=obj.start_date,
             )
 
-            # Exclure l'instance actuelle si c'est une modification
             if change:
                 overlapping = overlapping.exclude(pk=obj.pk)
 

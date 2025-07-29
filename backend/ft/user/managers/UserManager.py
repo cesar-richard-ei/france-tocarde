@@ -3,6 +3,10 @@ from django.utils.text import slugify
 
 
 class UserManager(BaseUserManager):
+    """
+    Manager for the User model.
+    """
+
     use_in_migrations = True
 
     def _create_user(self, email, password, **extra_fields):
@@ -10,10 +14,8 @@ class UserManager(BaseUserManager):
             raise ValueError("Users require an email field")
         email = self.normalize_email(email)
 
-        # Génère un username unique basé sur l'email si non fourni
         if not extra_fields.get("username"):
             username = slugify(email.split("@")[0])
-            # Vérifie l'unicité du username
             username_base = username
             i = 1
             while self.model.objects.filter(username=username).exists():

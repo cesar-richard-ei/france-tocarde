@@ -6,7 +6,7 @@ from ft.event.serializers import EventSerializer
 
 class CarpoolTripSerializer(serializers.ModelSerializer):
     """
-    Sérialiseur pour le modèle CarpoolTrip.
+    Serializer for the CarpoolTrip model.
     """
 
     driver = UserSerializer(read_only=True)
@@ -58,7 +58,6 @@ class CarpoolTripSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
-        # Si aucun conducteur n'est spécifié, on utilise l'utilisateur courant
         if "driver" not in validated_data:
             validated_data["driver"] = self.context["request"].user
         return super().create(validated_data)

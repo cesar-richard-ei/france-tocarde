@@ -16,7 +16,6 @@ class User(AbstractUser):
         BAPTISE = "BAPTISE", "Baptisé"
         OTHER = "OTHER", "Autre folklore"
 
-    # username: str = models.CharField(max_length=100, unique=True)
     email: str = models.EmailField(_("email address"), unique=True)
     last_name: str = models.CharField(max_length=150, verbose_name="Nom")
     first_name: str = models.CharField(max_length=150, verbose_name="Prénom")
