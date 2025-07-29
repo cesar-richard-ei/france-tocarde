@@ -32,6 +32,11 @@ export function HostingCard({
       return;
     }
 
+    if (hasUserRequested) {
+      toast.error("Vous avez déjà une demande en cours pour cet hébergement");
+      return;
+    }
+
     if (hasAcceptedRequestForEvent && !isAcceptedHosting) {
       toast.error("Vous avez déjà une demande acceptée pour cet événement");
       return;
@@ -50,7 +55,7 @@ export function HostingCard({
   const getButtonText = () => {
     if (isFull) return "Plus de place disponible";
     if (isUserHost) return "C'est votre hébergement";
-    if (hasUserRequested) return "Demande déjà envoyée";
+    if (hasUserRequested) return "Demande en cours";
     if (hasAcceptedRequestForEvent && !isAcceptedHosting) return "Déjà hébergé ailleurs";
     if (isAcceptedHosting) return "Votre hébergement actuel";
     return "Demander à être hébergé";

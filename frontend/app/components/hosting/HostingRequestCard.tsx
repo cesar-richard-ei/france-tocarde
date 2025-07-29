@@ -11,13 +11,13 @@ interface HostingRequestCardProps {
 }
 
 export function HostingRequestCard({ request, isSent = true, onCancelRequest }: HostingRequestCardProps) {
-  const hostingDetails = request.hosting_details;
+  const hostingDetails = request.hosting;
   const requesterObject = typeof request.requester === 'object' ? request.requester : null;
 
   // Déterminer le nom à afficher selon si c'est une demande envoyée ou reçue
   const displayName = isSent
-    ? `Hôte ${hostingDetails?.host?.first_name || "?"} ${hostingDetails?.host?.last_name || "?"}`
-    : `Demandeur ${requesterObject?.first_name || request.requester_name || "?"}`;
+    ? `Hôte: ${hostingDetails?.host?.first_name || "?"} ${hostingDetails?.host?.last_name || "?"}`
+    : `Demandeur: ${requesterObject?.first_name || request.requester_name || "?"}`;
 
   // Déterminer le message selon si c'est une demande envoyée ou reçue
   const messageLabel = isSent ? "Votre message:" : "Message:";

@@ -1,6 +1,6 @@
 import { Spinner } from "../ui/spinner";
 import { HostingRequestCard } from "./HostingRequestCard";
-import { useUpdateHostingRequestStatus, useSentHostingRequests } from "~/lib/eventHosting";
+import { useCancelHostingRequest, useSentHostingRequests } from "~/lib/eventHosting";
 import { type EventType } from "~/lib/event";
 
 interface MyHostingRequestsTabProps {
@@ -9,19 +9,14 @@ interface MyHostingRequestsTabProps {
 
 export function MyHostingRequestsTab({ event }: MyHostingRequestsTabProps) {
   const { data: sentRequests, isLoading: isLoadingSentRequests } = useSentHostingRequests();
-  const updateRequestStatusMutation = useUpdateHostingRequestStatus();
+  const cancelRequestMutation = useCancelHostingRequest();
 
-  // Filtrer les demandes pour l'événement actuel
   const filteredRequests = sentRequests?.results.filter(
-    req => Number(req.hosting_details?.event) === Number(event?.id)
+    req => Number(req.hosting?.event) === Number(event?.id)
   );
 
   const handleCancelRequest = (requestId: number) => {
-    updateRequestStatusMutation.mutate({
-      requestId,
-      status: "CANCELLED",
-      hostMessage: "",
-    });
+    cancelRequestMutation.mutate(requestId);
   };
 
   if (isLoadingSentRequests) {

@@ -21,15 +21,17 @@ export function AvailableHostingsTab({ event, acceptedRequestHostingIds = [] }: 
   const { data: hostings, isLoading: isLoadingHostings } = useEventHostings(event?.id);
   const { data: sentRequests } = useSentHostingRequests();
 
+  // Filtrer les IDs d'hébergement pour lesquels l'utilisateur a une demande en cours
+  // (tous les statuts sauf CANCELLED et REJECTED)
   const sentRequestIds = sentRequests?.results
-    .filter(req => req.status !== "CANCELLED")
-    .map(req => Number(req.hosting)) || [];
+    .filter(req => !["CANCELLED", "REJECTED"].includes(req.status))
+    .map(req => Number(req.hosting.id)) || [];
 
   // Vérifier si l'utilisateur a déjà une demande acceptée pour l'événement
   const hasAcceptedRequestForEvent = sentRequests?.results
     .some(req =>
       req.status === "ACCEPTED" &&
-      Number(req.hosting_details?.event) === Number(event?.id)
+      Number(req.hosting?.event) === Number(event?.id)
     ) || false;
 
   const handleHostingClick = (hosting: EventHosting) => {
@@ -37,6 +39,12 @@ export function AvailableHostingsTab({ event, acceptedRequestHostingIds = [] }: 
     if (hasAcceptedRequestForEvent && !acceptedRequestHostingIds.includes(hosting.id)) {
       return;
     }
+
+    // Si l'utilisateur a déjà une demande en cours pour cet hébergement, ne pas permettre une nouvelle demande
+    if (sentRequestIds.includes(hosting.id)) {
+      return;
+    }
+
     setSelectedHosting(hosting);
     setShowRequestForm(true);
   };

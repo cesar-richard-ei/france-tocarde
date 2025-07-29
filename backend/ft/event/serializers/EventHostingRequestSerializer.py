@@ -9,8 +9,6 @@ class EventHostingRequestSerializer(serializers.ModelSerializer):
     Serializer pour le modèle EventHostingRequest
     """
 
-    # En lecture : objets complets
-    # En écriture : simplement l'ID
     requester = UserSerializer(read_only=True)
     hosting = EventHostingSerializer(read_only=True)
     hosting_id = serializers.IntegerField(write_only=True, source="hosting.id")
@@ -72,7 +70,7 @@ class EventHostingRequestSerializer(serializers.ModelSerializer):
         existing_requests = EventHostingRequest.objects.filter(
             hosting__event=event,
             requester=requester,
-            status__in=["PENDING", "ACCEPTED"],
+            status="ACCEPTED",
         )
 
         # Exclure la demande actuelle en cas de mise à jour
@@ -82,7 +80,28 @@ class EventHostingRequestSerializer(serializers.ModelSerializer):
         if existing_requests.exists():
             raise serializers.ValidationError(
                 {
-                    "hosting_id": "Vous avez déjà une demande en cours pour cet événement."
+                    "hosting_id": "Vous avez déjà une demande acceptée pour cet événement."
+                }
+            )
+
+        # Vérification que l'utilisateur n'a pas déjà une demande en attente
+        # pour le même hébergement (peu importe le statut)
+        existing_hosting_requests = EventHostingRequest.objects.filter(
+            hosting=hosting,
+            requester=requester,
+        ).exclude(status__in=["CANCELLED", "REJECTED"])
+
+        # Exclure la demande actuelle en cas de mise à jour
+        if self.instance:
+            existing_hosting_requests = existing_hosting_requests.exclude(
+                pk=self.instance.pk
+            )
+
+        if existing_hosting_requests.exists():
+            raise serializers.ValidationError(
+                {
+                    "hosting_id": "Vous avez déjà une demande en cours "
+                    "pour cet hébergement."
                 }
             )
 
