@@ -28,19 +28,40 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-            python-version: '3.13'
-            cache: 'pip'
+          python-version: '3.13'
+          cache: 'pip'
 
       - name: Install dependencies
         working-directory: ./backend
         run: |
-            python -m pip install --upgrade pip
-            pip install -r requirements.txt
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Verify Django configuration
+        working-directory: ./backend
+        env:
+          DJANGO_SETTINGS_MODULE: ft.settings
+          DJANGO_SECRET_KEY: "test-secret-key-only-for-ci-tests-not-used-in-production"
+          FT_DJANGO_DEBUG: "True"
+          FT_DJANGO_ALLOWED_HOSTS: "*"
+          FT_CSRF_TRUSTED_ORIGINS: "http://localhost"
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ft
+          POSTGRES_DB: ft_test
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          FT_LOG_LEVEL: INFO
+        run: |
+          python -c "from django.conf import settings; from django.core.management.utils import get_random_secret_key; print(f'Django settings loaded successfully, SECRET_KEY is set: {bool(settings.SECRET_KEY)}'); print(f'Database connection: {settings.DATABASES[\"default\"][\"HOST\"]}:{settings.DATABASES[\"default\"][\"PORT\"]}')"
 
       - name: Run tests
         working-directory: ./backend
         env:
           DJANGO_SETTINGS_MODULE: ft.settings
+          DJANGO_SECRET_KEY: "test-secret-key-only-for-ci-tests-not-used-in-production"
+          FT_DJANGO_DEBUG: "True"
+          FT_DJANGO_ALLOWED_HOSTS: "*"
+          FT_CSRF_TRUSTED_ORIGINS: "http://localhost"
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: ft
           POSTGRES_DB: ft_test
@@ -53,5 +74,5 @@ jobs:
       - name: Upload coverage report
         uses: codecov/codecov-action@v4
         with:
-            file: ./backend/coverage.xml
-            fail_ci_if_error: false
+          file: ./backend/coverage.xml
+          fail_ci_if_error: false
