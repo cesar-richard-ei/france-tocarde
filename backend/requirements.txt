@@ -17,3 +17,8 @@ django-currentuser
 whitenoise
 django-allauth[socialaccount]
 drf-spectacular[sidecar]
+pytest
+pytest-django
+pytest-factoryboy
+faker
+pytest-cov
