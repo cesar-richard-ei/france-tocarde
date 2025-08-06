@@ -2,6 +2,7 @@ from rest_framework import serializers
 from ft.user.serializers import UserSerializer
 from ft.event.models import CarpoolTrip, Event
 from ft.event.serializers import EventSerializer
+from ft.user.models import User
 
 
 class CarpoolTripSerializer(serializers.ModelSerializer):
@@ -12,7 +13,7 @@ class CarpoolTripSerializer(serializers.ModelSerializer):
     driver = UserSerializer(read_only=True)
     driver_id = serializers.PrimaryKeyRelatedField(
         source="driver",
-        queryset=Event.objects.all(),
+        queryset=User.objects.all(),  # Correction: User au lieu de Event
         write_only=True,
         required=False,
     )
