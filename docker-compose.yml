@@ -34,6 +34,8 @@ services:
       - "8000:8000"
     volumes:
       - ./backend/ft:/code/ft
+      - ./backend/.coveragerc:/code/.coveragerc
+      - ./backend/pytest.ini:/code/pytest.ini
     depends_on:
       db:
         condition: service_healthy

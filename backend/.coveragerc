@@ -2,12 +2,16 @@
 source = ft
 omit =
     */migrations/*
+    ft/*/migrations/*.py
+    */settings.py
     */tests/*
     */admin.py
     */apps.py
+    */urls.py
     */wsgi.py
     */asgi.py
-    ft/settings.py
+    */manage.py
+    ft/resources/migrations/0002_init_datas.py
 
 [report]
 exclude_lines =
