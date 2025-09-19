@@ -109,8 +109,6 @@ class TestCarpoolRequestViewSet:
         assert len(response.data["results"]) == 1
         assert response.data["results"][0]["id"] == pending_request.id
 
-    # Nous sautons ce test pour l'instant car il nécessite de corriger le sérialiseur
-    @pytest.mark.skip(reason="Le sérialiseur a besoin d'être adapté")
     def test_create_carpool_request(self, api_client, passenger, trip):
         """Test de création d'une demande de covoiturage."""
         api_client.force_authenticate(user=passenger)
@@ -186,14 +184,13 @@ class TestCarpoolRequestViewSet:
         assert response.status_code == status.HTTP_200_OK
         assert response.data["status"] == "CANCELLED"
 
-    # Nous sautons ce test pour l'instant car il nécessite de corriger le sérialiseur
-    @pytest.mark.skip(reason="Le sérialiseur a besoin d'être adapté")
     def test_register_payment(self, api_client, driver, accepted_request):
         """Test qu'un conducteur peut enregistrer un paiement."""
         api_client.force_authenticate(user=driver)
 
         url = reverse("carpool-request-payment", kwargs={"pk": accepted_request.id})
         data = {
+            # CarpoolRequestViewSet ajoute automatiquement request_id
             "amount": "15.00",
             "is_completed": True,
             "payment_method": "CASH",
@@ -201,6 +198,11 @@ class TestCarpoolRequestViewSet:
         }
 
         response = api_client.post(url, data, format="json")
+
+        # Afficher les erreurs en cas d'échec
+        if response.status_code != status.HTTP_200_OK:
+            print(f"Erreur: {response.status_code}")
+            print(f"Réponse: {response.data}")
 
         assert response.status_code == status.HTTP_200_OK
 

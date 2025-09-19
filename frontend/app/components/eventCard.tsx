@@ -58,7 +58,7 @@ export function EventCard({ event, onSelect }: { event: EventType; onSelect?: (e
         <Card className="overflow-hidden hover:shadow-lg transition-shadow bg-white flex flex-col h-full cursor-pointer" onClick={handleCardClick}>
             <div className="aspect-video relative">
             <img
-                src="https://picsum.photos/400/200"
+                src={event.url_image || "https://picsum.photos/400/200"}
                 alt={event.name}
                 className="object-cover"
             />

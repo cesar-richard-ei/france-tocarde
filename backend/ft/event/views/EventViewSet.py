@@ -34,7 +34,7 @@ class EventViewSet(viewsets.ModelViewSet):
         event = self.get_object()
         from ft.event.models import EventSubscription
 
-        subscription, created = EventSubscription.objects.update_or_create(
+        subscription = EventSubscription.objects.update_or_create(
             event=event,
             user=request.user,
             defaults={

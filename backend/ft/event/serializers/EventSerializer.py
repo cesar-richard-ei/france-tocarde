@@ -22,6 +22,7 @@ class EventSerializer(serializers.ModelSerializer):
             "end_date",
             "url_signup",
             "url_website",
+            "url_image",
             "prices",
             "is_active",
             "at_compiegne",

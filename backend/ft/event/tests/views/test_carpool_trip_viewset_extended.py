@@ -137,7 +137,8 @@ class TestCarpoolTripViewSetExtended:
         api_client.force_authenticate(user=driver)
 
         # Format de date ISO 8601 (YYYY-MM-DD)
-        tomorrow = (timezone.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+        # Pour éviter les problèmes de timezone, n'utilisons que la date
+        tomorrow = timezone.localdate() + datetime.timedelta(days=1)
 
         url = f"{reverse('carpool-trip-list')}?departure_after={tomorrow}"
         response = api_client.get(url)
@@ -154,7 +155,8 @@ class TestCarpoolTripViewSetExtended:
         api_client.force_authenticate(user=driver)
 
         # Format de date ISO 8601 (YYYY-MM-DD)
-        yesterday = (timezone.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+        # Pour éviter les problèmes de timezone, n'utilisons que la date
+        yesterday = timezone.localdate() - datetime.timedelta(days=1)
 
         url = f"{reverse('carpool-trip-list')}?departure_before={yesterday}"
         response = api_client.get(url)
@@ -203,20 +205,19 @@ class TestCarpoolTripViewSetExtended:
         api_client.force_authenticate(user=driver)
 
         url = reverse("carpool-trip-list")
+        departure_date = timezone.now() + datetime.timedelta(days=5)
+        return_date = timezone.now() + datetime.timedelta(days=7)
+
         data = {
             "event_id": event.id,  # Utiliser event_id comme attendu par le serializer
             "departure_city": "Lille",
             "arrival_city": "Compiègne",
-            "departure_datetime": (
-                timezone.now() + datetime.timedelta(days=5)
-            ).isoformat(),
-            "return_datetime": (
-                timezone.now() + datetime.timedelta(days=7)
-            ).isoformat(),
+            "departure_datetime": departure_date.isoformat(),
+            "return_datetime": return_date.isoformat(),
             "seats_total": 3,
             "price_per_seat": "22.50",
-            "has_return": True,  # Ajout d'un champ peut-être obligatoire
-            "is_active": True,  # Ajout d'un champ peut-être obligatoire
+            "has_return": True,
+            "is_active": True,
         }
 
         response = api_client.post(url, data, format="json")

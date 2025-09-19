@@ -23,6 +23,7 @@ export const EventTypeSchema = z.object({
   at_compiegne: z.boolean(),
   is_public: z.boolean(),
   type: EventTypesSchema,
+  url_image: z.string().nullable().optional(),
   subscriptions_count: z.union([
     z.number(), // Pour rétrocompatibilité avec l'ancienne API
     SubscriptionStatsSchema
@@ -51,6 +52,8 @@ export function getEventTypes (status: EventTypes) {
           return 'Congrès';
       case 'DRINK':
           return 'Apéral';
+      case 'OFFICE':
+          return 'Office';
       case 'OTHER':
           return 'Autre';
   }

@@ -11,6 +11,11 @@ class CarpoolRequestSerializer(serializers.ModelSerializer):
 
     passenger = UserSerializer(read_only=True)
     trip = CarpoolTripSerializer(read_only=True)
+    trip_id = serializers.PrimaryKeyRelatedField(
+        source="trip",
+        queryset=CarpoolTrip.objects.all(),
+        write_only=True,
+    )
 
     is_paid = serializers.SerializerMethodField()
     total_paid = serializers.SerializerMethodField()
@@ -22,6 +27,7 @@ class CarpoolRequestSerializer(serializers.ModelSerializer):
             "id",
             "passenger",
             "trip",
+            "trip_id",
             "status",
             "seats_requested",
             "message",

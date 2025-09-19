@@ -125,11 +125,11 @@ class TestCarpoolPaymentSerializer:
         # Vérifier que les champs en lecture seule ne sont pas modifiables
         assert "request_id" not in data
 
-    @pytest.mark.skip(reason="Problème d'API avec les champs request/request_id")
     def test_deserialize_valid_payment(self, accepted_request, driver_request_context):
         """Test de la désérialisation d'un paiement valide."""
         data = {
-            "request": accepted_request.id,  # Fournir request au lieu de request_id
+            "request": accepted_request.id,
+            "request_id": accepted_request.id,  # Fournir à la fois request et request_id
             "amount": "30.00",
             "is_completed": True,
             "payment_method": "CASH",
@@ -151,10 +151,9 @@ class TestCarpoolPaymentSerializer:
         self, rejected_request, driver_request_context
     ):
         """Test de la validation d'un paiement pour une demande non acceptée."""
-        # Utiliser simplement le test comme une vérification d'état
-        # sans assertions spécifiques sur les messages d'erreur
         data = {
             "request": rejected_request.id,
+            "request_id": rejected_request.id,  # Fournir les deux champs
             "amount": "15.00",
             "is_completed": True,
             "payment_method": "CASH",
@@ -162,17 +161,15 @@ class TestCarpoolPaymentSerializer:
 
         serializer = CarpoolPaymentSerializer(data=data, context=driver_request_context)
         assert not serializer.is_valid()
-        # Test plus simple qui vérifie seulement que la validation échoue
         assert len(serializer.errors) > 0
 
     def test_validate_payment_by_passenger(
         self, accepted_request, passenger_request_context
     ):
         """Test de la validation d'un paiement par un passager (non autorisé)."""
-        # Utiliser simplement le test comme une vérification d'état
-        # sans assertions spécifiques sur les messages d'erreur
         data = {
             "request": accepted_request.id,
+            "request_id": accepted_request.id,  # Fournir les deux champs
             "amount": "30.00",
             "is_completed": True,
             "payment_method": "CASH",
@@ -182,7 +179,6 @@ class TestCarpoolPaymentSerializer:
             data=data, context=passenger_request_context
         )
         assert not serializer.is_valid()
-        # Test plus simple qui vérifie seulement que la validation échoue
         assert len(serializer.errors) > 0
 
     def test_update_payment(self, payment, driver_request_context):

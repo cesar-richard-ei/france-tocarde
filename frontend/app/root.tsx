@@ -9,6 +9,7 @@ import {
 import { AuthProvider } from "./components/auth/AuthContext";
 import { Toaster } from "sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -42,6 +43,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <AuthProvider>
             {children}
           </AuthProvider>
+          {import.meta.env.DEV && false ? <ReactQueryDevtools initialIsOpen={false} /> : null}
         </QueryClientProvider>
         <Toaster />
         <ScrollRestoration />

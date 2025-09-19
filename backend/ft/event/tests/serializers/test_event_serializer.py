@@ -34,6 +34,7 @@ class TestEventSerializer:
         assert data["at_compiegne"] is False
         assert data["type"] == "CONGRESS"
         assert data["prices"] == "Standard: 15€"
+        assert data["url_image"] is None
         assert "subscriptions_count" in data
         assert "first_subscribers" in data
 

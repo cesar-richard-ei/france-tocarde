@@ -23,7 +23,7 @@ services:
       DJANGO_SECRET_KEY: "+uochl)=pkgm#_8v0d)e&w0+0h9%d-+p)w19my_0^5om%ur#e2"
       FT_DJANGO_DEBUG: "True"
       FT_DJANGO_ALLOWED_HOSTS: "*"
-      FT_CSRF_TRUSTED_ORIGINS: "http://localhost:5173,https://jubilant-fortnight-r6wv7jxqv9vhxxq4-5173.app.github.dev"
+      FT_CSRF_TRUSTED_ORIGINS: "http://localhost:5173"
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ft
       POSTGRES_DB: ft
@@ -41,11 +41,11 @@ services:
         condition: service_healthy
     command: python manage.py runserver 0.0.0.0:8000
 
-  mailhog:
-    image: mailhog/mailhog
-    ports:
-      - "1025:1025"
-      - "8025:8025"
+  # mailhog:
+  #   image: mailhog/mailhog
+  #   ports:
+  #     - "1025:1025"
+  #     - "8025:8025"
 
 volumes:
   pgdata:

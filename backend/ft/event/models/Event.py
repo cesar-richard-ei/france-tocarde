@@ -49,6 +49,13 @@ class Event(models.Model):
         blank=True,
         null=True,
     )
+    url_image: str = models.URLField(
+        max_length=255,
+        verbose_name="URL de l'image",
+        help_text="URL de l'image de l'événement",
+        blank=True,
+        null=True,
+    )
     prices: str = models.TextField(
         null=True,
         blank=True,
