@@ -35,7 +35,7 @@ export function updateUser(data: Record<string, any>, id: number) {
     credentials: settings.withCredentials ? 'include' as RequestCredentials : undefined
   }
 
-if (settings.client === Client.BROWSER) {
+  if (settings.client === Client.BROWSER) {
     const csrfToken = getCSRFToken();
     if (csrfToken) {
       (options.headers as Record<string, string>)['X-CSRFToken'] = csrfToken;
