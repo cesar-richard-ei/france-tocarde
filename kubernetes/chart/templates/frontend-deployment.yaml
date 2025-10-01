@@ -20,8 +20,10 @@ spec:
       labels:
         app: ft-frontend
         version: v1
+        sidecar.istio.io/inject: "true"
       annotations:
-        sidecar.istio.io/inject: "false"
+        proxy.istio.io/config: '{"holdApplicationUntilProxyStarts": true}'
+        sidecar.istio.io/rewriteAppHTTPProbers: "true"
     spec:
       imagePullSecrets:
         - name: ghcr-secret
@@ -37,6 +39,8 @@ spec:
           ports:
             - containerPort: 80
               name: http
+            - containerPort: 15020
+              name: http-istio
           volumeMounts:
             - name: nginx-run
               mountPath: /run/nginx

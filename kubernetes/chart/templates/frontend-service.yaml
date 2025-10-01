@@ -10,5 +10,8 @@ spec:
   - port: 80
     name: http
     targetPort: 80
+  - port: 15020
+    name: http-istio
+    targetPort: 15020
   selector:
     app: ft-frontend
