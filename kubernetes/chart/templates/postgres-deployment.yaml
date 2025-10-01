@@ -78,7 +78,8 @@ spec:
               else
                 PG_VERSION=$(cat /var/lib/postgresql/data/pgdata/PG_VERSION)
                 if [ "$PG_VERSION" != "17" ]; then
-                  pg_upgrade -b /usr/lib/postgresql/13/bin -B /usr/lib/postgresql/16/bin -d /var/lib/postgresql/data/pgdata -D /var/lib/postgresql/data/pgdata_new
+                  echo "Upgrading PostgreSQL from $PG_VERSION to 17"
+                  pg_upgrade -b /usr/lib/postgresql/$PG_VERSION/bin -B /usr/lib/postgresql/17/bin -d /var/lib/postgresql/data/pgdata -D /var/lib/postgresql/data/pgdata_new
                   mv /var/lib/postgresql/data/pgdata /var/lib/postgresql/data/pgdata_old
                   mv /var/lib/postgresql/data/pgdata_new /var/lib/postgresql/data/pgdata
                   rm -rf /var/lib/postgresql/data/pgdata_old
