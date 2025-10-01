@@ -40,7 +40,7 @@ istio:
   revision: default
 
 prometheus:
-  enabled: false
+  enabled: true
 
 revisionHistoryLimit: 10
 
