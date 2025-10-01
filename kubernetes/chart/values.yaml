@@ -40,7 +40,7 @@ istio:
   revision: default
 
 prometheus:
-  enabled: false
+  enabled: true
 
 revisionHistoryLimit: 10
 
@@ -52,10 +52,10 @@ frontend:
   resources:
     requests:
       cpu: 50m
-      memory: 64Mi
-    limits:
-      cpu: 100m
       memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
 
 django:
   secret_key: "+uochl)=pkgm#_8v0d)e&w0+0h9$d-+p)w19my_0^5om%ur#e1"
